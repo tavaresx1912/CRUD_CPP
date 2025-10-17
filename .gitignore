@@ -1,0 +1,34 @@
+# Build directories
+cmake-build-debug/
+build/
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Executables and object files
+*.exe
+*.out
+*.o
+*.obj
+
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Temporary files
+*.log
+
+# Data files (não versionar arquivos de dados/credenciais gerados em tempo de execução)
+produtos.txt
+usuarios.txt
+produtos_temp.txt
+
+# Backup / OS
+Thumbs.db
+.DS_Store
+# CRUD_CPP
