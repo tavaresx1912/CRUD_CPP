@@ -13,29 +13,59 @@ int FCPP_Autenticar() {
     Arquivo = fopen("usuarios.txt", "r");
 
     if (Arquivo == NULL) {
-        printf("Erro ao abrir o Arquivo, criando usuário");
+        printf("Arquivo de usuários não encontrado. Criando padrão...\n");
         Arquivo = fopen("usuarios.txt", "w");
+        if (Arquivo == NULL) {
+            printf("Erro ao criar o arquivo de usuários.\n");
+            return 0;
+        }
+        fprintf(Arquivo, "admin;12345;2\n");
+        fprintf(Arquivo, "user;54321;1\n");  // criei aqui o user
+        fclose(Arquivo);
+
+        Arquivo = fopen("usuarios.txt", "r");
+        if (Arquivo == NULL) {
+            printf("Erro ao abrir o arquivo de usuários.\n");
+            return 0;
+        }
+    } else {
+        // Existe: verifica se está vazio
+        int c = fgetc(Arquivo);
+        if (c == EOF) { //tive que utilizar esse fgetc e E0F, porque está dando um bug e eu não tava conseguindo resolve ai pedi pro chat
+            fclose(Arquivo);
+            Arquivo = fopen("usuarios.txt", "w");
+            if (Arquivo == NULL) {
+                printf("Erro ao criar o arquivo de usuários.\n");
+                return 0;
+            }
+            fprintf(Arquivo, "admin;12345;2\n");
+            fprintf(Arquivo, "user;54321;1\n");
+            fclose(Arquivo);
+            Arquivo = fopen("usuarios.txt", "r");
+            if (Arquivo == NULL) {
+                printf("Erro ao abrir o arquivo de usuários.\n");
+                return 0;
+            }
+        } else {
+            // esse aqui tambem
+            ungetc(c, Arquivo);
+        }
     }
-    if (Arquivo == NULL) {
-        printf("Erro ao criar o Arquivo,");
-        return 0;
-    }
 
-    fprintf(Arquivo, "admin;12345;1;1");
-    fclose(Arquivo);
+    // Coleta credenciais digitadas
+    printf("Digitar o usuário: ");
+    scanf("%19s", CPP_Usuario_Digitado);
+    printf("Digitar a senha: ");
+    scanf("%19s", CPP_Senha_Digitada);
 
-    Arquivo = fopen("usuarios.txt", "r");
-    if (Arquivo == NULL) {
-        printf("Erro ao abrir o Arquivo.");
-        return 0;
-    }
-
-    printf("Digitar o usuário");
-    scanf("%s", CPP_Usuario_Digitado);
-    printf("Digitar a senha");
-    scanf("%s", CPP_Senha_Digitada);
-
-    while (fscanf(Arquivo, "%19[^;];%19[^;];%d\n", CPP_Usuario, CPP_Senha, &CPP_Role) == 3) {
+    // Procura usuário e senha no arquivo
+    while (fscanf(Arquivo, " %19[^;];%19[^;];%d", CPP_Usuario, CPP_Senha, &CPP_Role) == 3) {
+        // consome até o fim da linha (\n ou EOF), caso haja lixo após o papel
+        int ch;
+        while ((ch = fgetc(Arquivo)) != '\n' && ch != EOF) {
+            // descarta
+            //tive que novamente coloca aquele comando de fgetc e EOF porque tava dando bug
+        }
         if (strcmp(CPP_Usuario, CPP_Usuario_Digitado) == 0 && strcmp(CPP_Senha, CPP_Senha_Digitada) == 0) {
             CPP_Autenticado = 1;
             break;
@@ -55,7 +85,7 @@ int FCPP_Autenticar() {
 void FCPP_Cadastrar_Produto() {
     FILE *Arquivo;
     char  CPP_Produto[20];
-    float CPP_Preco;   
+    float CPP_Preco;
     int CPP_Codigo;
     int CPP_Quantidade;
 
@@ -72,7 +102,7 @@ void FCPP_Cadastrar_Produto() {
     scanf("%f", &CPP_Preco);
 
     printf("Digite o código: ");
-    scanf("%d", &CPP_Codigo);   
+    scanf("%d", &CPP_Codigo);
 
 
     printf("Digite a quantidade: ");
@@ -87,7 +117,7 @@ void FCPP_Cadastrar_Produto() {
 void FCPP_Ler_Produtos() {
     FILE *Arquivo;
     char  CPP_Produto[20];
-    float CPP_Preco;   
+    float CPP_Preco;
     int CPP_Codigo;
     int CPP_Quantidade;
 
@@ -150,7 +180,7 @@ void FCPP_Atualizar_Produto() {
                     break;
                 case 2:
                     printf("Digite o novo preço: ");
-                    scanf("%s", CPP_Preco_Novo);
+                    scanf("%f", &CPP_Preco_Novo); // corrigido: ler float corretamente
                     fprintf(Arquivo_Temporario, "%s;%.2f;%d;%d\n", CPP_Produto, CPP_Preco_Novo, CPP_Codigo, CPP_Quantidade);
                     break;
                 case 3:
@@ -162,6 +192,11 @@ void FCPP_Atualizar_Produto() {
                     printf("Digite o código novo");
                     scanf("%d", &CPP_Codigo_Novo);
                     fprintf(Arquivo_Temporario, "%s;%.2f;%d;%d\n", CPP_Produto, CPP_Preco, CPP_Codigo_Novo, CPP_Quantidade);
+                    break;
+                default:
+                    // Opção inválida: mantém o registro inalterado
+                    printf("Opção inválida. Registro mantido.\n");
+                    fprintf(Arquivo_Temporario, "%s;%.2f;%d;%d\n", CPP_Produto, CPP_Preco, CPP_Codigo, CPP_Quantidade);
                     break;
             }
         } else {
@@ -213,10 +248,11 @@ void FCPP_Excluir_Produto() {
         } else {
             fprintf(Arquivo_Temporario, "%s;%.2f;%d;%d\n", CPP_Produto, CPP_Preco, CPP_Codigo, CPP_Quantidade);
         }
-
-        fclose(Arquivo);
-        fclose(Arquivo_Temporario);
     }
+
+    // troquei o fclose para fora do loop
+    fclose(Arquivo);
+    fclose(Arquivo_Temporario);
 
     if (CPP_Encontrado) {
         remove("produtos.txt");
@@ -224,22 +260,84 @@ void FCPP_Excluir_Produto() {
     } else {
         remove("produtos_temp.txt");
     }
-
-
 }
+
+static void FCPP_Menu_Admin() {
+    printf("Menu Admin:\n");
+    printf("1. Cadastrar Produto\n");
+    printf("2. Ler Produtos\n");
+    printf("3. Atualizar Produto\n");
+    printf("4. Excluir Produto\n");
+    printf("0. Sair\n");
+    printf("Aperte um numero entre 0 a 4: ");
+}
+
+static void FCPP_Menu_User() {
+    printf("Menu User:\n");
+    printf("1. Ler Produtos\n");
+    printf("0. Sair\n");
+    printf("Aperte um numero entre 0 ou 1: ");
+} //fiz um menu crud só de teste depois podemos troca só pra ve se funciona
+// ai eu fiz com static void é como se fosse uma função de visibilidade, ai ela é iniciada 1 vez só no começo do program
 
 int main(void) {
     int CPP_Nivel_acesso = FCPP_Autenticar();
 
-    switch (CPP_Nivel_acesso) {
-        case 1:
-            printf("Bem vindo USER");
-        case 2:
-            printf("Bem vindo ADMIN");
-            break;
-        default:
-            break;
-    }
+    if (CPP_Nivel_acesso == 0) {
 
+        return 0;
+    }//se o login falhar vai encerra o programa
+
+    if (CPP_Nivel_acesso == 2) {
+        int opcao = -1;
+        do {
+            FCPP_Menu_Admin();
+            if (scanf("%d", &opcao) != 1) {
+                printf("Entrada inválida. Desligando.");
+                break;
+            }
+
+            switch (opcao) {
+                case 1:
+                    FCPP_Cadastrar_Produto();
+                    break;
+                case 2:
+                    FCPP_Ler_Produtos();
+                    break;
+                case 3:
+                    FCPP_Atualizar_Produto();
+                    break;
+                case 4:
+                    FCPP_Excluir_Produto();
+                    break;
+                case 0:
+                    printf("saindo\n");
+                    break;
+                default:
+                    printf("Opção inválida\n");
+                    break;
+            }
+        } while (opcao != 0);
+    } else if (CPP_Nivel_acesso == 1) {
+        int opcao = -1;
+        do {
+            FCPP_Menu_User();
+            if (scanf("%d", &opcao) != 1) {
+                printf("Entrada não acessada. Desligando.");
+                break;
+            }
+            switch (opcao) {
+                case 1:
+                    FCPP_Ler_Produtos();
+                    break;
+                case 0:
+                    printf("Saindo\n");
+                    break;
+                default:
+                    printf("Opção inválida\n");
+                    break;
+            }
+        } while (opcao != 0);
+    }
     return 0;
 }
