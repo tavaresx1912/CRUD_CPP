@@ -1,6 +1,9 @@
-cmake_minimum_required(VERSION 4.0)
-project(CRUD_CPP C)
+cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_C_STANDARD 11)
+# Projeto principal: usar C++ e o arquivo main.cpp existente
+project(CRUD_CPP LANGUAGES CXX)
 
-add_executable(CRUD_CPP main.c)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_executable(CRUD_CPP main.cpp)
